@@ -1,0 +1,10 @@
+{% extends 'core/auth_base.html' %}
+{% block title %}Create account | TraceAI{% endblock %}
+{% block content %}
+<h2 id="form-title">Create your account</h2><p class="intro">Get started with your own TraceAI workspace.</p>
+<form method="post">{% csrf_token %}
+{% if form.non_field_errors %}<div role="alert">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div role="alert">{{ field.errors }}</div>{% endif %}{% if field.help_text %}<div class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>{% endif %}</div>{% endfor %}
+<button type="submit">Create account</button>
+</form><p class="switch">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+{% endblock %}

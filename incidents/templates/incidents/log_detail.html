@@ -1,0 +1,37 @@
+{% extends "incidents/base.html" %}
+{% block title %}Log Evidence #{{ evidence.pk }}{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold">Log Evidence #{{ evidence.pk }}</h1>
+<p class="mt-3 break-words">Incident #{{ incident.pk }} · {{ evidence.source_name }}</p>
+<p class="mt-3 text-slate-400">Static evidence extraction only. Error frequency does not establish root cause. Unclassified lines may still contain failures.</p>
+<section class="mt-6 p-6 bg-slate-900 rounded-xl">
+<h2 class="text-xl font-semibold">Summary</h2>
+{% if evidence.analysis.version >= 2 %}<p class="mt-3">{{ evidence.analysis.json_lines }} JSON candidate lines · {{ evidence.analysis.diagnostic_count }} parsing diagnostics</p>{% endif %}
+<p class="mt-3">{{ evidence.analysis.total_lines }} total lines · {{ evidence.analysis.error_count }} error-level lines · {{ evidence.analysis.timestamp_count }} parsed timestamps</p>
+<p class="mt-3 text-amber-300">{{ evidence.analysis.timestamps_without_timezone }} timestamps have no timezone; UTC was not assumed.</p>
+<div class="mt-3 flex flex-wrap gap-4">{% for level, count in evidence.analysis.counts.items %}<span>{{ level }}: {{ count }}</span>{% endfor %}</div>
+</section>
+{% if evidence.analysis.diagnostics %}
+<section class="mt-6 p-5 border border-amber-800 rounded-xl">
+<h2 class="text-xl font-semibold">Parsing diagnostics</h2>
+<p class="mt-2 text-slate-400">Some structured fields could not be interpreted. Original source is preserved below.</p>
+{% for issue in evidence.analysis.diagnostics %}<p class="mt-2 text-amber-300">Line {{ issue.line }}: {{ issue.message }}</p>{% endfor %}
+{% if evidence.analysis.diagnostics_truncated %}<p class="mt-2 text-amber-300">Showing first 100 diagnostics.</p>{% endif %}
+</section>
+{% endif %}
+<h2 class="text-xl font-semibold mt-8">Error message groups</h2>
+<p class="text-slate-400 mt-2">Exact matching messages after timestamp/level removal. Up to 100 groups; first 10 source line numbers per group.</p>
+{% if evidence.analysis.groups_truncated %}<p class="text-amber-300">Group display truncated. Full source is below.</p>{% endif %}
+{% for group in evidence.analysis.groups %}
+<article class="mt-4 p-5 rounded-lg border border-slate-700">
+<h3>{{ group.level }} · {{ group.count }} occurrence(s)</h3>
+<pre class="mt-3 whitespace-pre-wrap break-words text-slate-300">{{ group.message }}</pre>
+<p class="mt-3 text-blue-300">Source lines: {{ group.lines|join:", " }}</p>
+</article>
+{% empty %}<p class="mt-4 text-slate-400">No recognized ERROR/CRITICAL lines. This does not prove the logs are healthy.</p>{% endfor %}
+<h2 class="text-xl font-semibold mt-8">Error evidence timeline (source order)</h2>
+{% if evidence.analysis.evidence_truncated %}<p class="text-amber-300">Showing first 100 error lines. Counts include all lines.</p>{% endif %}
+{% for item in evidence.analysis.evidence %}<p class="mt-3 break-words">Line {{ item.line }} · {{ item.timestamp|default:"No parsed timestamp" }} · {{ item.level }} · {{ item.message }}</p>{% endfor %}
+<details class="mt-8 p-5 bg-slate-900 rounded-xl"><summary class="cursor-pointer">Original logs (source line order)</summary><pre class="mt-4 whitespace-pre-wrap break-words text-sm">{{ evidence.source_text }}</pre></details>
+<a class="inline-block mt-6 text-blue-300 underline" href="{% url 'incidents:detail' incident.pk %}">Back to Incident</a>
+{% endblock %}

@@ -1,0 +1,5 @@
+{"spans": [
+  {"trace_id": "checkout-001", "span_id": "request", "service": "checkout-api", "operation": "POST /checkout", "started_at": "2026-09-24T10:30:00Z", "duration_ms": 1800, "status": "ERROR"},
+  {"trace_id": "checkout-001", "span_id": "db-call", "service": "database-client", "operation": "lookup order", "started_at": "2026-09-24T10:30:00Z", "duration_ms": 1500, "status": "ERROR"},
+  {"trace_id": "checkout-002", "span_id": "request", "service": "checkout-api", "operation": "GET /health", "started_at": "2026-09-24T10:30:02Z", "duration_ms": 20, "status": "OK"}
+]}

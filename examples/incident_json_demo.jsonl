@@ -1,0 +1,6 @@
+{"timestamp":"2026-09-24T10:30:00Z","level":"INFO","message":"checkout-api started"}
+{"timestamp":"2026-09-24T10:30:02Z","level":"ERROR","message":"database connection timeout"}
+{"time":"2026-09-24T10:30:04Z","severity":"error","msg":"database connection timeout"}
+{"@timestamp":"2026-09-24T16:00:05+05:30","level":"WARN","message":"request latency above threshold"}
+{"timestamp":"2026-09-24 10:30:06","level":"FATAL","message":"checkout unavailable"}
+{"level":"ERROR","message":

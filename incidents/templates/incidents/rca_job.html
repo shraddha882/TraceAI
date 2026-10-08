@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RCA Generation | TraceAI</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+<main class="max-w-3xl mx-auto p-8">
+    <a href="{% url 'incidents:detail' incident.pk %}" class="text-purple-300 underline">Back to incident</a>
+    <h1 class="text-3xl font-bold mt-8">RCA generation</h1>
+    <p class="mt-4 break-all">{{ incident.title }}</p>
+    <p class="mt-3">AI explanation: {{ job.use_ai|yesno:'requested,not requested' }}. Reusing an active job preserves its original selection.</p>
+    <p class="mt-6" role="status" aria-live="polite">Status: <span id="status">{{ job.get_status_display }}</span></p>
+    <p id="message" class="mt-4 text-slate-300">{{ job.error }}</p>
+    <p class="mt-4 text-slate-400">Uses saved evidence available when processing starts. You can leave this page and return from the incident. Pending jobs wait for an available worker.</p>
+    <a id="report" class="mt-6 text-purple-300 underline" {% if job.report_id %}href="{% url 'incidents:rca_detail' incident.pk job.report_id %}"{% else %}hidden{% endif %}>Open saved RCA report</a>
+    <noscript>Refresh this page to update the status.</noscript>
+</main>
+<script>
+async function poll() {
+    const message = document.getElementById('message');
+    try {
+        const response = await fetch("{% url 'incidents:rca_job_status' incident.pk job.pk %}", {cache: 'no-store'});
+        if (!response.ok) throw new Error('Status unavailable');
+        const data = await response.json();
+        document.getElementById('status').textContent = data.status;
+        message.textContent = data.error || (data.status === 'running' ? 'Building an evidence-backed investigation report…' : '');
+        if (data.report_url) {
+            const report = document.getElementById('report');
+            report.href = data.report_url;
+            report.hidden = false;
+        }
+        if (['completed', 'failed'].includes(data.status)) return;
+    } catch (error) {
+        message.textContent = 'Could not refresh status. Retrying shortly…';
+    }
+    setTimeout(poll, 3000);
+}
+poll();
+</script>
+</body></html>

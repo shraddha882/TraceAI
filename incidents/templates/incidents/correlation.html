@@ -1,0 +1,31 @@
+{% extends "incidents/base.html" %}
+{% load tz %}
+{% block title %}Evidence Correlation{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold">Evidence Correlation — Incident #{{ incident.pk }}</h1>
+<p class="mt-3">{{ incident.title }} · {{ incident.affected_service }}</p>
+<p class="mt-3 text-slate-400">Live view of saved evidence, recalculated on each visit. No external requests. Temporal proximity is not proof of causation.</p>
+<p class="mt-3">Window: {{ correlation.start|utc|date:"d M Y H:i:s" }} to {{ correlation.end|utc|date:"d M Y H:i:s" }} UTC</p>
+<p class="mt-3 text-slate-400">{{ correlation.policy }}</p>
+<h2 class="mt-8 text-xl font-semibold">Possible temporal relationships</h2>
+{% for relation in correlation.relationships %}
+<article class="mt-4 p-5 border border-slate-700 rounded-lg">
+<p>A deployment at or before the incident preceded {{ relation.matching_spans }} error/slow span observation(s) for the same service within the window. Check whether these are related; environments are unverified.</p>
+<p class="mt-3"><a class="text-blue-300 underline" href="{{ relation.deployment.url }}">{{ relation.deployment.identity }}</a> → <a class="text-blue-300 underline" href="{{ relation.trace.url }}">{{ relation.trace.identity }}</a></p>
+</article>
+{% empty %}<p class="mt-3 text-slate-400">No deployment-to-trace relationship meets the current rules. This does not rule out a deployment-related incident.</p>{% endfor %}
+<h2 class="mt-8 text-xl font-semibold">Evidence in window ({{ correlation.events|length }})</h2>
+{% for event in correlation.events %}
+<article class="mt-4 p-4 border border-slate-700 rounded-lg">
+<a href="{{ event.url }}" class="text-blue-300 underline break-all">{{ event.identity }}</a>
+<p class="mt-2 break-words">{{ event.title }}</p>
+<p class="mt-2">{{ event.time|utc|date:"d M Y H:i:s" }} UTC · {{ event.offset_seconds }} seconds relative to incident</p>
+<p class="text-slate-400">Service: {{ event.service|default:"not recorded" }} · {{ event.service_match }}</p>
+</article>
+{% empty %}<p class="mt-3 text-amber-300">No evidence has a usable timestamp within the window. Check the incident time and attached evidence dates.</p>{% endfor %}
+<h2 class="mt-8 text-xl font-semibold">Excluded observations ({{ correlation.excluded|length }})</h2>
+{% for event in correlation.excluded %}<p class="mt-3"><a class="text-blue-300 underline break-all" href="{{ event.url }}">{{ event.identity }}</a> · {{ event.reason }}{% if event.time %} {{ event.time|utc|date:"d M Y H:i:s" }} UTC{% endif %}</p>{% empty %}<p class="mt-3 text-slate-400">No observations excluded.</p>{% endfor %}
+<h2 class="mt-8 text-xl font-semibold">Coverage gaps</h2>
+{% for gap in correlation.gaps %}<p class="mt-3 text-amber-300">{{ gap }}</p>{% endfor %}
+<a href="{% url 'incidents:detail' incident.pk %}" class="inline-block mt-8 text-blue-300 underline">Back to Incident</a>
+{% endblock %}

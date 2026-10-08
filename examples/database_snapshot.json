@@ -1,0 +1,9 @@
+{
+  "database": "checkout-db",
+  "captured_at": "2026-09-24T10:30:00Z",
+  "current_connections": 90,
+  "max_connections": 100,
+  "queries": [{"query_id": "checkout_lookup", "duration_ms": 1500}],
+  "lock_wait_count": 2,
+  "oldest_lock_wait_ms": 2500
+}

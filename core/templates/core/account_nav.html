@@ -1,0 +1,51 @@
+<style>
+    .account-bar{border-bottom:1px solid #1e293b;background:linear-gradient(110deg,#0f172a,#0b1222);color:#cbd5e1;font-family:inherit}
+    .account-bar__inner{max-width:1280px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .account-bar__links,.account-bar__user{display:flex;align-items:center;gap:18px;min-width:0}
+    .account-bar__dashboard{display:inline-flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid #334155;border-radius:9px;color:#e2e8f0;font-size:13px;font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}
+    .account-bar__dashboard:hover{background:#1e293b;border-color:#64748b}
+    .account-bar__dashboard[aria-current=page]{background:#172554;border-color:#1e40af;color:#bfdbfe}
+    .account-bar svg{width:16px;height:16px;flex-shrink:0}
+    .account-bar__workspace{display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8;border-left:1px solid #334155;padding-left:18px;white-space:nowrap}
+    .account-bar__identity{display:flex;align-items:center;gap:10px;min-width:0}
+    .account-bar__avatar{width:34px;height:34px;border:1px solid #373f77;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#1e2549;color:#c7d2fe;font-size:13px;font-weight:700}
+    .account-bar__name{font-size:13px;font-weight:600;color:#e2e8f0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .account-bar__caption{font-size:10px;line-height:1.4;color:#94a3b8;letter-spacing:.04em}
+    .account-bar__logout{margin:0;flex-shrink:0}
+    .account-bar__logout button{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #334155;border-radius:9px;background:transparent;color:#cbd5e1;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+    .account-bar__logout button:hover{background:#301c2c;color:#fda4af;border-color:#704052}
+    .account-bar a:focus-visible,.account-bar button:focus-visible{outline:2px solid #60a5fa;outline-offset:4px}
+    @media(max-width:640px){.account-bar__inner{padding:12px 20px;gap:12px;flex-wrap:wrap}.account-bar__links{gap:12px}.account-bar__workspace{padding-left:12px;font-size:12px}.account-bar__user{gap:12px}.account-bar__name{max-width:135px}}
+    @media(prefers-reduced-motion:reduce){.account-bar *{transition:none}}
+</style>
+<nav class="account-bar" aria-label="Account navigation">
+    <div class="account-bar__inner">
+        <div class="account-bar__links">
+            <a href="{% url 'dashboard' %}" class="account-bar__dashboard"{% if request.resolver_match.url_name == 'dashboard' %} aria-current="page"{% endif %}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                Dashboard
+            </a>
+            <span class="account-bar__workspace">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v3h4v-3"/></svg>
+                My workspace
+            </span>
+        </div>
+        <div class="account-bar__user">
+            <div class="account-bar__identity">
+                <span class="account-bar__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+                <div>
+                    <div class="account-bar__caption">SIGNED IN AS</div>
+                    <div class="account-bar__name" title="{{ request.user.username }}">{{ request.user.username }}</div>
+                </div>
+            </div>
+            <form class="account-bar__logout" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M8 12h13"/></svg>
+                    Sign out
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+

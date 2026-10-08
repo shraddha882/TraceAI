@@ -1,0 +1,12 @@
+{% extends 'core/auth_base.html' %}
+{% block title %}Sign in | TraceAI{% endblock %}
+{% block content %}
+<h2 id="form-title">Welcome back</h2><p class="intro">Sign in to continue to your workspace.</p>
+{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
+<form method="post">{% csrf_token %}
+{% if form.errors %}<p class="error" role="alert">Unable to sign in. Check your username and password, and make sure your account is active.</p>{% endif %}
+<div class="field"><label for="id_username">Username</label><input id="id_username" name="username" type="text" value="{{ form.username.value|default_if_none:'' }}" autocomplete="username" maxlength="150" required autofocus></div>
+<div class="field"><label for="id_password">Password</label><input id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+<input type="hidden" name="next" value="{{ next }}"><button type="submit">Sign in</button>
+</form><p class="switch">New to TraceAI? <a href="{% url 'signup' %}">Create an account</a></p>
+{% endblock %}

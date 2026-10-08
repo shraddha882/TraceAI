@@ -1,0 +1,78 @@
+{% extends "incidents/base.html" %}
+{% load tz %}
+{% block title %}Deployment #{{ deployment.pk }}{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold">Deployment Record #{{ deployment.pk }}</h1>
+<section class="mt-6 p-6 bg-slate-900 rounded-xl space-y-3">
+<p class="break-words">Service: {{ deployment.service }} · Environment: {{ deployment.environment }}</p>
+<p>Deployed: {{ deployment.deployed_at|utc|date:"d M Y, H:i:s" }} UTC</p>
+<p class="text-blue-300">{{ deployment.relative_time }}</p>
+<p class="break-all">Repository: {{ deployment.repository }}</p>
+<p class="break-all">Deployed commit: {{ deployment.commit_sha }}</p>
+<p class="break-all">Previous commit: {{ deployment.previous_commit_sha|default:"Not provided" }}</p>
+<p class="whitespace-pre-wrap break-words">{{ deployment.notes }}</p>
+</section>
+<p class="mt-4 text-slate-400">User-supplied deployment record. GitHub comparison can verify commit availability, not whether this deployment happened. Time proximity is not proof of causation.</p>
+<section class="mt-6 border border-slate-700 rounded-xl p-5">
+<h2 class="text-xl font-semibold">Deployment Git Diff</h2>
+{% if diff_error %}<p role="alert" class="mt-3 text-red-300">{{ diff_error }}</p>{% endif %}
+{% if deployment.saved_diff %}
+{% with diff=deployment.saved_diff.snapshot %}
+<p class="mt-3 text-slate-400">Saved comparison · {{ deployment.saved_diff.created_at|utc|date:"d M Y, H:i" }} UTC · {{ diff.status }}</p>
+<p class="mt-2 break-all">{{ diff.base_sha }} → {{ diff.head_sha }}</p>
+<p class="mt-3 text-slate-400">Up to 100 files and 20,000 patch characters per file are saved. GitHub can omit or shorten patches.</p>
+{% if not deployment.saved_diff.code_review %}
+<form method="post" action="{% url 'incidents:deployment_review' incident.pk deployment.pk %}" class="mt-4">{% csrf_token %}<button class="bg-blue-600 rounded-lg px-5 py-3" type="submit">Analyze Deployment Python Files</button></form>
+{% endif %}
+<p class="mt-3 text-slate-400">Code review analyzes entire changed Python files at the saved head commit, not just added lines. Up to 5 files, 1 MB each. Existing issues may appear; findings do not establish incident causation.</p>
+{% if deployment.saved_diff.code_review %}
+{% with review=deployment.saved_diff.code_review %}
+<section class="mt-6 bg-slate-900 rounded-lg p-5">
+<h3 class="text-xl font-semibold">Saved Deployment Code Review</h3>
+<p class="mt-3">{{ review.analysis_summary.analyzed }} analyzed · {{ review.analysis_summary.failed }} failed · {{ review.analysis_summary.skipped }} skipped · {{ review.analysis_summary.total_findings }} findings</p>
+<p class="mt-2">Critical: {{ review.analysis_summary.counts.CRITICAL }} · High: {{ review.analysis_summary.counts.HIGH }} · Medium: {{ review.analysis_summary.counts.MEDIUM }} · Low: {{ review.analysis_summary.counts.LOW }}</p>
+{% if review.analysis_summary.partial %}<p class="mt-3 text-amber-300">Partial analysis: some files could not be analyzed.</p>{% endif %}
+{% if not review.analysis_summary.analyzed %}<p class="mt-3 text-amber-300">No files successfully analyzed. This is not a clean review.</p>{% endif %}
+{% for file in review.files %}
+<article class="mt-5 border-t border-slate-700 pt-4">
+<h4 class="font-semibold break-all">{{ file.filename }}</h4>
+<p class="mt-2">{{ file.analysis_status }} · {{ file.analysis_message }}</p>
+{% if file.analysis.syntax_error %}<p class="text-amber-300">Syntax error at line {{ file.analysis.syntax_error.line }}: {{ file.analysis.syntax_error.message }}</p>{% endif %}
+{% if file.analysis.success %}
+{% for finding in file.analysis.findings %}
+<div class="mt-4 p-4 rounded-lg bg-slate-950">
+<h5 class="font-semibold">{{ finding.severity }} · {{ finding.title }} · Line {{ finding.line }}</h5>
+<p class="mt-2">{{ finding.description }}</p>
+<p class="mt-2 text-slate-400">Impact: {{ finding.impact }}</p>
+<p class="mt-2 text-green-300">Suggested fix: {{ finding.suggested_fix }}</p>
+</div>
+{% empty %}<p class="mt-3 text-green-300">No issues detected by current rules in this file.</p>{% endfor %}
+{% endif %}
+</article>
+{% endfor %}
+</section>
+{% endwith %}
+{% endif %}
+{% if diff.file_list_limited %}<p class="mt-3 text-amber-300">File-list limit reached; this may be a partial comparison.</p>{% endif %}
+<a href="{{ diff.url }}" target="_blank" rel="noopener noreferrer" class="inline-block mt-3 text-blue-300 underline">Open comparison on GitHub</a>
+{% for file in diff.files %}
+<article class="mt-5 border-t border-slate-700 pt-4">
+<h3 class="font-semibold break-all">{{ file.filename }}</h3>
+{% if file.previous_filename %}<p class="text-slate-400 break-all">Previously: {{ file.previous_filename }}</p>{% endif %}
+<p class="mt-2">{{ file.status }} · +{{ file.additions }} / −{{ file.deletions }}</p>
+{% if file.patch_missing %}<p class="mt-2 text-amber-300">Patch unavailable from GitHub (for example, binary or large content).</p>{% else %}
+{% if file.patch_truncated %}<p class="mt-2 text-amber-300">Stored patch truncated at 20,000 characters.</p>{% endif %}
+<details class="mt-3"><summary class="cursor-pointer text-blue-300">Show saved diff</summary><pre class="mt-3 bg-slate-950 p-4 overflow-auto text-sm">{{ file.patch }}</pre></details>
+{% endif %}
+</article>
+{% empty %}<p class="mt-3">GitHub returned no changed files for this comparison.</p>{% endfor %}
+{% endwith %}
+{% else %}
+<p class="mt-3 text-slate-400">Fetch and save a public GitHub comparison using both full SHAs. Only forward-history comparisons are supported; rollback/diverged histories are rejected.</p>
+{% if deployment.previous_commit_sha %}
+<form method="post" action="{% url 'incidents:deployment_fetch_diff' incident.pk deployment.pk %}" class="mt-4">{% csrf_token %}<button type="submit" class="bg-blue-600 px-5 py-3 rounded-lg">Fetch and Save Git Diff</button></form>
+{% else %}<p class="mt-3 text-amber-300">Previous commit is missing. Record a deployment with both real commit SHAs to fetch a diff.</p>{% endif %}
+{% endif %}
+</section>
+<a href="{% url 'incidents:detail' incident.pk %}" class="inline-block mt-6 text-blue-300 underline">Back to Incident Timeline</a>
+{% endblock %}

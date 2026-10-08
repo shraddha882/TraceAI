@@ -1,0 +1,6 @@
+2026-09-24T10:30:00Z INFO checkout-api started
+2026-09-24T10:30:02Z ERROR database connection timeout
+2026-09-24T10:30:04Z ERROR database connection timeout
+2026-09-24T10:30:05Z WARNING request latency above threshold
+2026-09-24T10:30:06Z CRITICAL checkout unavailable
+2026-09-24 10:30:07 INFO retry scheduled

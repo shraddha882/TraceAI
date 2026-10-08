@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Review History | TraceAI</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+
+<nav class="border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-6 py-5
+                flex justify-between items-center">
+
+        <a href="/"
+           class="text-xl font-bold">
+            Trace<span class="text-purple-500">AI</span>
+        </a>
+
+        <div class="flex gap-6 text-sm">
+
+            <a href="{% url 'code_review:review' %}"
+               class="text-slate-400 hover:text-white">
+                New Review
+            </a>
+
+            <a href="{% url 'code_review:history' %}"
+               class="text-purple-400">
+                History
+            </a>
+
+        </div>
+
+    </div>
+</nav>
+<section class="max-w-6xl mx-auto px-6 py-6">
+    <h2 class="text-xl font-semibold">Recent background PR analyses</h2>
+    {% for job in jobs %}
+    <p class="mt-3 break-all"><a class="text-purple-300 underline" href="{% url 'code_review:job_detail' job.pk %}">{{ job.pr_url }}</a> — {{ job.get_status_display }}</p>
+    {% empty %}<p class="mt-3 text-slate-400">No background analyses yet.</p>{% endfor %}
+</section>
+
+
+<main class="max-w-6xl mx-auto px-6 py-12">
+
+    <div class="flex justify-between items-end mb-8">
+
+        <div>
+            <p class="text-purple-400 text-sm font-semibold mb-2">
+                TRACEAI
+            </p>
+
+            <h1 class="text-4xl font-bold">
+                Review History
+            </h1>
+
+            <p class="text-slate-400 mt-3">
+                Previously analyzed code and security findings.
+            </p>
+        </div>
+
+        <a href="{% url 'code_review:review' %}"
+           class="bg-purple-600 hover:bg-purple-500
+                  px-5 py-3 rounded-lg font-medium">
+            + New Review
+        </a>
+
+    </div>
+
+
+    <section class="mb-10" aria-labelledby="pr-history-title">
+        <h2 id="pr-history-title" class="text-2xl font-semibold mb-4">GitHub PR Reports</h2>
+        <div class="space-y-4">
+        {% for saved in pr_reviews %}
+            <article class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <h3 class="text-lg font-semibold break-words">{{ saved.snapshot.title }}</h3>
+                <p class="mt-2 text-purple-300 break-all">{{ saved.snapshot.repository }} · PR #{{ saved.snapshot.number }}</p>
+                <p class="mt-2 text-sm text-slate-400">{{ saved.created_at|date:"d M Y, H:i" }} · {{ saved.snapshot.analysis_summary.total_findings }} potential findings · {{ saved.snapshot.analysis_summary.analyzed }} files analyzed</p>
+                <p class="mt-2 text-sm text-slate-400 break-all">Head: {{ saved.snapshot.head_sha }}</p>
+                {% if saved.snapshot.analysis_summary.partial %}<p class="mt-2 text-amber-300">Partial analysis</p>{% endif %}
+                {% if not saved.snapshot.analysis_summary.analyzed %}<p class="mt-2 text-amber-300">No files successfully analyzed</p>{% endif %}
+                <a href="{% url 'code_review:pr_detail' saved.pk %}" class="inline-block mt-4 text-purple-300 underline">View Saved PR Report</a>
+            </article>
+        {% empty %}<p class="text-slate-400">No saved PR reports yet.</p>{% endfor %}
+        </div>
+    </section>
+    <h2 class="text-2xl font-semibold mb-4">Paste / Upload Reports</h2>
+    <div class="space-y-4">
+
+        {% for review in reviews %}
+
+        <div class="bg-slate-900 border border-slate-800
+                    rounded-xl p-6">
+
+            <div class="flex justify-between items-center">
+
+                <div>
+
+                    <div class="flex items-center gap-3">
+
+                        <h2 class="font-semibold text-lg">
+                            Review #{{ review.id }}
+                        </h2>
+
+                        <span class="bg-slate-800 text-slate-300
+                                     px-3 py-1 rounded-full text-xs">
+                            {{ review.language }}
+                        </span>
+
+                    </div>
+
+                    <p class="text-slate-500 text-sm mt-2">
+                        {{ review.created_at|date:"d M Y, h:i A" }}
+                    </p>
+
+                </div>
+
+
+                <div class="flex gap-3">
+
+                    {% if review.critical_count %}
+
+                    <span class="bg-red-950 text-red-400
+                                 px-3 py-2 rounded-lg text-sm">
+                        {{ review.critical_count }} Critical
+                    </span>
+
+                    {% endif %}
+
+
+                    {% if review.high_count %}
+
+                    <span class="bg-orange-950 text-orange-400
+                                 px-3 py-2 rounded-lg text-sm">
+                        {{ review.high_count }} High
+                    </span>
+
+                    {% endif %}
+
+
+                    {% if review.medium_count %}
+
+                    <span class="bg-yellow-950 text-yellow-400
+                                 px-3 py-2 rounded-lg text-sm">
+                        {{ review.medium_count }} Medium
+                    </span>
+
+                    {% endif %}
+
+
+                    <a
+                        href="{% url 'code_review:detail' review.id %}"
+                        class="border border-slate-700
+                               hover:border-purple-500
+                               px-4 py-2 rounded-lg text-sm">
+                        View Report →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="bg-slate-900 border border-slate-800
+                    rounded-xl p-10 text-center">
+
+            <p class="text-slate-400">
+                No code reviews yet.
+            </p>
+
+            <a href="{% url 'code_review:review' %}"
+               class="text-purple-400 inline-block mt-3">
+                Analyze your first code →
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</main>
+
+</body>
+</html>

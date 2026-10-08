@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub PR Preview | TraceAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+<nav class="border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-6 py-5 flex flex-wrap gap-4 justify-between">
+        <a href="{% url 'dashboard' %}" class="text-xl font-bold">Trace<span class="text-purple-400">AI</span></a>
+        <div class="flex gap-5 text-slate-300">
+            <a href="{% url 'code_review:review' %}">Paste / Upload</a>
+            <a href="{% url 'code_review:history' %}">Review History</a>
+        </div>
+    </div>
+</nav>
+<main class="max-w-6xl mx-auto px-6 py-10">
+    {% if saved_pr_review %}
+    <h1 class="text-3xl font-bold">Saved PR Report #{{ saved_pr_review.pk }}</h1>
+    <p class="text-slate-400 mt-3">Saved {{ saved_pr_review.created_at|date:"d M Y, H:i" }}. This historical snapshot is not refreshed from GitHub.</p>
+    <p class="text-slate-400 mt-2">Findings cover entire changed Python files at the recorded head commit, including possible pre-existing issues.</p>
+    <a href="{% url 'code_review:github' %}" class="inline-block mt-4 text-purple-300 underline">New PR Analysis</a>
+    {% else %}
+    <h1 class="text-3xl font-bold">GitHub PR Preview</h1>
+    <p class="text-slate-400 mt-3">Inspect a public pull request or queue a background analysis of its changed Python files. Track progress and saved reports in Review History. The PR head is fetched when the worker starts.</p>
+    <form method="post" class="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6">
+        {% csrf_token %}
+        <label for="{{ form.pr_url.id_for_label }}" class="font-medium">{{ form.pr_url.label }}</label>
+        {{ form.pr_url }}
+        {% if form.errors %}
+        <div role="alert" class="mt-4 text-red-300">
+            {{ form.pr_url.errors }}{{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        <p class="text-sm text-slate-400 mt-3">Use https://github.com/owner/repo/pull/123. Public repositories only; no token needed. Shows up to 100 files.</p>
+        <button type="submit" class="mt-5 bg-purple-600 hover:bg-purple-500 rounded-lg px-5 py-3">Load Pull Request</button>
+        <button type="submit" name="action" value="analyze" class="mt-5 ml-2 bg-blue-600 hover:bg-blue-500 rounded-lg px-5 py-3">Analyze Python Files</button>
+        <p class="text-sm text-slate-400 mt-3">Analysis checks entire changed Python files at the fetched head commit, not just added lines. Up to 5 files, 1 MB each. Existing issues may also appear. No LLM key required.</p>
+    </form>
+    {% endif %}
+    {% if pr %}
+    <section class="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6" aria-labelledby="pr-title">
+        <p class="text-purple-300 break-all">{{ pr.repository }} · #{{ pr.number }} · {{ pr.state }}</p>
+        <h2 id="pr-title" class="text-2xl font-semibold mt-2 break-words">{{ pr.title }}</h2>
+        <p class="text-slate-400 mt-3">By {{ pr.author }} · {{ pr.total_files }} changed files</p>
+        <p class="text-sm text-slate-400 mt-3 break-all">Head commit: <code>{{ pr.head_sha }}</code></p>
+        <p class="text-sm text-slate-400 mt-1 break-all">Base commit: <code>{{ pr.base_sha }}</code></p>
+        <a href="{{ pr.url }}" target="_blank" rel="noopener noreferrer" class="inline-block text-purple-300 underline mt-4">Open on GitHub</a>
+    </section>
+    {% if pr.analysis_summary %}
+    <section class="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-6">
+        <h2 class="text-xl font-semibold">Static Analysis Results</h2>
+        <p class="mt-3">{{ pr.analysis_summary.analyzed }} files analyzed · {{ pr.analysis_summary.failed }} failed · {{ pr.analysis_summary.skipped }} skipped</p>
+        <p class="mt-2">{{ pr.analysis_summary.total_findings }} potential findings in successfully analyzed files</p>
+        <p class="mt-2 text-slate-300">Critical: {{ pr.analysis_summary.counts.CRITICAL }} · High: {{ pr.analysis_summary.counts.HIGH }} · Medium: {{ pr.analysis_summary.counts.MEDIUM }} · Low: {{ pr.analysis_summary.counts.LOW }}</p>
+        {% if pr.analysis_summary.partial %}<p role="status" class="mt-3 text-amber-300">Partial analysis: some files were not analyzed. Check the statuses below.</p>{% endif %}
+        {% if not pr.analysis_summary.analyzed %}<p class="mt-3 text-amber-300">No files were successfully analyzed. This is not a clean review.</p>{% endif %}
+    </section>
+    {% endif %}
+    <h2 class="text-xl font-semibold mt-8">Changed files — {{ pr.files|length }} shown</h2>
+    {% if pr.incomplete %}
+    <p role="status" class="mt-3 text-amber-300">This is a partial file list. The preview shows at most 100 files; the PR may also have changed during loading. Open GitHub for the full current list.</p>
+    {% endif %}
+    <div class="mt-4 space-y-3">
+        {% for file in pr.files %}
+        <article class="bg-slate-900 border border-slate-800 rounded-lg p-5">
+            <h3 class="font-mono break-all">{{ file.filename }}</h3>
+            {% if file.previous_filename %}<p class="text-sm text-slate-400 break-all mt-2">Previously: {{ file.previous_filename }}</p>{% endif %}
+            <p class="text-sm mt-3"><span class="text-slate-300">{{ file.status }}</span> · <span class="text-green-400">+{{ file.additions }}</span> / <span class="text-red-400">−{{ file.deletions }}</span>{% if file.is_python %} · <span class="text-purple-300">Python</span>{% endif %}</p>
+            {% if file.analysis_status %}
+            <p class="mt-3 text-slate-300">Analysis: {{ file.analysis_status }}{% if file.analysis_message %} — {{ file.analysis_message }}{% endif %}</p>
+            {% if file.analysis.syntax_error %}<p class="mt-2 text-amber-300">Syntax error at line {{ file.analysis.syntax_error.line }}: {{ file.analysis.syntax_error.message }}</p>{% endif %}
+            {% if file.analysis.success %}
+                {% for finding in file.analysis.findings %}
+                <div class="mt-4 p-4 border border-slate-700 rounded-lg bg-slate-950">
+                    <h4 class="font-semibold">{{ finding.severity }} · {{ finding.title }}</h4>
+                    <p class="text-sm text-purple-300 mt-2">{{ finding.category }} · Line {{ finding.line }}</p>
+                    <p class="mt-3 text-slate-300">{{ finding.description }}</p>
+                    <p class="mt-3 text-slate-400">Impact: {{ finding.impact }}</p>
+                    <p class="mt-3 text-green-300">Suggested fix: {{ finding.suggested_fix }}</p>
+                </div>
+                {% empty %}<p class="mt-3 text-green-300">No issues detected by the current static rules in this file.</p>{% endfor %}
+            {% endif %}
+            {% endif %}
+        </article>
+        {% empty %}<p class="text-slate-400">No changed files returned by GitHub.</p>{% endfor %}
+    </div>
+    {% endif %}
+</main>
+</body>
+</html>

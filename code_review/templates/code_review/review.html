@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Code Review | TraceAI</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+
+
+<!-- NAVBAR -->
+
+<nav class="border-b border-slate-800">
+
+    <div
+        class="max-w-7xl mx-auto px-8 py-5
+               flex flex-wrap gap-4 justify-between items-center"
+    >
+
+        <a href="/" class="text-2xl font-bold">
+            Trace<span class="text-blue-500">AI</span>
+        </a>
+
+
+        <div class="flex flex-wrap items-center gap-5">
+        <a href="{% url 'code_review:github' %}"
+           class="text-slate-400 hover:text-white">GitHub PR</a>
+        <a href="{% url 'code_review:history' %}"
+           class="text-slate-400 hover:text-white">
+            Review History
+        </a>
+        <a
+            href="{% url 'dashboard' %}"
+            class="text-slate-400 hover:text-white"
+        >
+            ← Dashboard
+        </a>
+        </div>
+
+    </div>
+
+</nav>
+
+
+<!-- MAIN -->
+
+<main class="max-w-7xl mx-auto px-8 py-12">
+
+
+    <!-- HEADER -->
+
+    <div class="mb-10">
+
+        <p
+            class="text-purple-400
+                   font-semibold text-sm mb-3"
+        >
+            CODE INTELLIGENCE
+        </p>
+
+
+        <h1 class="text-4xl font-bold mb-4">
+            AI Code Review
+        </h1>
+
+
+        <p class="text-slate-400 max-w-3xl">
+
+            Analyze code for security vulnerabilities,
+            reliability issues, performance problems,
+            database risks and production failures.
+
+        </p>
+
+    </div>
+
+
+
+    <!-- GRID -->
+
+    <div class="grid lg:grid-cols-3 gap-8">
+
+
+        <!-- CODE INPUT -->
+
+        <div
+            class="lg:col-span-2
+                   bg-slate-900
+                   border border-slate-800
+                   rounded-xl p-6"
+        >
+
+           <form method="POST" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <div class="mb-6">
+
+    <label for="code_file" class="block text-sm font-medium text-slate-300 mb-2">
+        Upload Python File
+    </label>
+
+    <input
+        type="file"
+        name="code_file"
+        id="code_file"
+        aria-describedby="upload-help"
+        accept=".py"
+        class="block w-full text-sm text-slate-400
+               file:mr-4 file:py-2 file:px-4
+               file:rounded-lg file:border-0
+               file:bg-purple-600 file:text-white
+               hover:file:bg-purple-500"
+    >
+
+    <p id="upload-help" class="text-slate-500 text-xs mt-2">
+        Upload a UTF-8 .py file (maximum 1 MB) or paste your code below.
+        If both are provided, the file is analyzed as Python instead of the pasted code.
+    </p>
+
+</div>
+
+
+                <div
+                    class="flex justify-between
+                           items-center mb-4"
+                >
+
+                    <label for="code" class="font-medium">
+                        Paste your code
+                    </label>
+
+
+                    <select
+                        name="language"
+                        aria-label="Code language"
+                        class="bg-slate-800
+                               border border-slate-700
+                               rounded-lg
+                               px-3 py-2
+                               text-sm"
+                    >
+
+                        <option{% if selected_language == "Python" %} selected{% endif %}>Python</option>
+                        <option{% if selected_language == "JavaScript" %} selected{% endif %}>JavaScript</option>
+                        <option{% if selected_language == "Java" %} selected{% endif %}>Java</option>
+                        <option{% if selected_language == "SQL" %} selected{% endif %}>SQL</option>
+
+                    </select>
+
+                </div>
+
+
+                <textarea
+                    name="code"
+                    id="code"
+                    spellcheck="false"
+                    placeholder="Paste code here..."
+                    class="w-full h-96
+                           bg-slate-950
+                           border border-slate-700
+                           rounded-lg
+                           p-5
+                           font-mono text-sm
+                           text-slate-300
+                           focus:outline-none
+                           focus:border-purple-500"
+                >{{ submitted_code }}</textarea>
+
+
+                <button
+                    type="submit"
+                    class="mt-5
+                           bg-purple-600
+                           hover:bg-purple-500
+                           transition
+                           px-6 py-3
+                           rounded-lg
+                           font-medium"
+                >
+
+                    Analyze Code
+
+                </button>
+
+            </form>
+
+            {% if upload_error %}
+
+<div role="alert" class="mt-6 bg-red-950 border border-red-800
+            rounded-xl p-5">
+
+    <p class="text-red-400 font-semibold">
+        Unable to analyze code
+    </p>
+
+    <p class="text-slate-300 mt-2">
+        {{ upload_error }}
+    </p>
+
+</div>
+
+{% endif %}
+
+        </div>
+
+
+
+        <!-- INFO -->
+
+        <div>
+
+            <div
+                class="bg-slate-900
+                       border border-slate-800
+                       rounded-xl p-6"
+            >
+
+                <h3 class="font-semibold mb-5">
+                    TraceAI will inspect
+                </h3>
+
+
+                <div class="space-y-4 text-sm">
+
+                    <div>
+                        🔐
+                        <span class="ml-2">
+                            Security vulnerabilities
+                        </span>
+                    </div>
+
+
+                    <div>
+                        ⚡
+                        <span class="ml-2">
+                            Performance issues
+                        </span>
+                    </div>
+
+
+                    <div>
+                        🛡️
+                        <span class="ml-2">
+                            Reliability risks
+                        </span>
+                    </div>
+
+
+                    <div>
+                        🗄️
+                        <span class="ml-2">
+                            Database problems
+                        </span>
+                    </div>
+
+
+                    <div>
+                        ⚠️
+                        <span class="ml-2">
+                            Error handling
+                        </span>
+                    </div>
+
+
+                    <div>
+                        🚨
+                        <span class="ml-2">
+                            Production risks
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- TEST RESULT -->
+    {% if review_result %}
+
+<div class="mt-10">
+
+    <div class="flex justify-between items-end mb-6">
+
+        <div>
+            <p class="text-purple-400 text-sm font-semibold mb-2">
+                TRACEAI ANALYSIS
+            </p>
+
+            <h2 class="text-3xl font-bold">
+                Code Review Report
+            </h2>
+        </div>
+
+        <p class="text-slate-400">
+            {{ review_result.findings|length }} findings
+        </p>
+
+    </div>
+
+
+    <!-- Summary -->
+     {% if review_result.success %}
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+    <div class="bg-slate-900 border border-red-900 rounded-xl p-5">
+        <p class="text-slate-500 text-xs font-semibold">
+            CRITICAL
+        </p>
+
+        <p class="text-3xl font-bold text-red-400 mt-2">
+            {{ review_result.counts.CRITICAL }}
+        </p>
+    </div>
+
+
+    <div class="bg-slate-900 border border-orange-900 rounded-xl p-5">
+        <p class="text-slate-500 text-xs font-semibold">
+            HIGH
+        </p>
+
+        <p class="text-3xl font-bold text-orange-400 mt-2">
+            {{ review_result.counts.HIGH }}
+        </p>
+    </div>
+
+
+    <div class="bg-slate-900 border border-yellow-900 rounded-xl p-5">
+        <p class="text-slate-500 text-xs font-semibold">
+            MEDIUM
+        </p>
+
+        <p class="text-3xl font-bold text-yellow-400 mt-2">
+            {{ review_result.counts.MEDIUM }}
+        </p>
+    </div>
+
+
+    <div class="bg-slate-900 border border-blue-900 rounded-xl p-5">
+        <p class="text-slate-500 text-xs font-semibold">
+            LOW
+        </p>
+
+        <p class="text-3xl font-bold text-blue-400 mt-2">
+            {{ review_result.counts.LOW }}
+        </p>
+    </div>
+
+</div>
+
+{% endif %}
+
+    <div class="bg-slate-900 border border-slate-800
+                rounded-xl p-6 mb-6">
+
+        <p class="text-slate-300">
+            {{ review_result.summary }}
+        </p>
+
+        {% if saved_review %}
+        <a href="{% url 'code_review:detail' saved_review.pk %}"
+           class="inline-block mt-4 rounded-lg bg-purple-600 hover:bg-purple-500
+                  px-5 py-3 text-sm font-medium">
+            View Saved Report
+        </a>
+        {% endif %}
+
+    </div>
+
+
+    <!-- Syntax Error -->
+
+    {% if review_result.syntax_error %}
+
+    <div class="bg-red-950 border border-red-800
+                rounded-xl p-6 mb-6">
+
+        <p class="text-red-400 font-semibold">
+            Syntax Error
+        </p>
+
+        <p class="text-slate-300 mt-2">
+            Line {{ review_result.syntax_error.line }}:
+            {{ review_result.syntax_error.message }}
+        </p>
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- Findings -->
+
+    <div class="space-y-5">
+
+        {% for finding in review_result.findings %}
+
+        <div class="bg-slate-900 border border-slate-800
+                    rounded-xl p-6">
+
+            <div class="flex justify-between items-start">
+
+                <div>
+
+                    <p class="text-purple-400 text-sm font-semibold">
+                        {{ finding.category }}
+                    </p>
+
+                    <h3 class="text-xl font-semibold mt-1">
+                        {{ finding.title }}
+                    </h3>
+
+                </div>
+
+
+                {% if finding.severity == "CRITICAL" %}
+
+                <span class="text-red-400 bg-red-950
+                             px-3 py-1 rounded-full text-xs">
+                    CRITICAL
+                </span>
+
+                {% elif finding.severity == "HIGH" %}
+
+                <span class="text-orange-400 bg-orange-950
+                             px-3 py-1 rounded-full text-xs">
+                    HIGH
+                </span>
+
+                {% elif finding.severity == "MEDIUM" %}
+
+                <span class="text-yellow-400 bg-yellow-950
+                             px-3 py-1 rounded-full text-xs">
+                    MEDIUM
+                </span>
+
+                {% else %}
+
+                <span class="text-blue-400 bg-blue-950
+                             px-3 py-1 rounded-full text-xs">
+                    LOW
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <p class="text-slate-500 text-sm mt-3">
+                Line {{ finding.line }}
+            </p>
+
+
+            <p class="text-slate-300 mt-4">
+                {{ finding.description }}
+            </p>
+
+
+            <div class="mt-5">
+
+                <p class="font-semibold text-sm">
+                    Production Impact
+                </p>
+
+                <p class="text-slate-400 mt-1">
+                    {{ finding.impact }}
+                </p>
+
+            </div>
+
+
+            <div class="bg-slate-950 rounded-lg p-4 mt-5">
+
+                <p class="text-green-400 text-sm font-semibold">
+                    Suggested Fix
+                </p>
+
+                <p class="text-slate-300 mt-2">
+                    {{ finding.suggested_fix }}
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% empty %}
+
+        {% if review_result.success %}
+
+        <div class="bg-green-950 border border-green-900
+                    rounded-xl p-6">
+
+            <p class="text-green-400 font-semibold">
+                ✓ No issues detected by the current TraceAI rules.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endif %}
+
+</main>
+
+
+</body>
+
+</html>

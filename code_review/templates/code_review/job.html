@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PR Analysis | TraceAI</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+<main class="max-w-3xl mx-auto p-8">
+    <a href="{% url 'code_review:history' %}" class="text-purple-300 underline">Review History</a>
+    <h1 class="text-3xl font-bold mt-8">PR analysis</h1>
+    <p class="mt-4 break-all">{{ job.pr_url }}</p>
+    <p class="mt-6" role="status" aria-live="polite">Status: <span id="status">{{ job.get_status_display }}</span></p>
+    <p id="message" class="mt-4 text-slate-300">{{ job.error }}</p>
+    <p class="mt-4 text-slate-400">You can leave this page and return through Review History. Pending jobs wait until a review worker is available.</p>
+    <a id="report" class="block mt-6 text-purple-300 underline" {% if job.review_id %}href="{% url 'code_review:pr_detail' job.review_id %}"{% else %}hidden{% endif %}>Open saved report</a>
+    <a href="{% url 'code_review:github' %}" class="block mt-6 text-purple-300 underline">New PR analysis / retry</a>
+    <noscript>Refresh this page to update the status.</noscript>
+</main>
+<script>
+const statusNode = document.getElementById('status');
+const message = document.getElementById('message');
+async function poll() {
+    try {
+        const response = await fetch("{% url 'code_review:job_status' job.pk %}", {cache: 'no-store'});
+        if (!response.ok) throw new Error('Status unavailable');
+        const data = await response.json();
+        statusNode.textContent = data.status;
+        message.textContent = data.error || (data.status === 'running' ? 'Analyzing changed Python files…' : '');
+        if (data.report_url) {
+            const report = document.getElementById('report');
+            report.href = data.report_url;
+            report.hidden = false;
+        }
+        if (['completed', 'failed'].includes(data.status)) return;
+    } catch (error) {
+        message.textContent = 'Could not refresh status. Retrying shortly…';
+    }
+    setTimeout(poll, 3000);
+}
+poll();
+</script>
+</body></html>

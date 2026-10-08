@@ -1,0 +1,53 @@
+{% extends "incidents/base.html" %}
+{% load tz %}
+{% block title %}Incident #{{ incident.pk }}{% endblock %}
+{% block content %}
+<p class="text-blue-300">INCIDENT #{{ incident.pk }}</p>
+<h1 class="text-3xl font-bold mt-3 break-words">{{ incident.title }}</h1>
+<section class="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6">
+    <h2 class="text-xl font-semibold">Incident Details</h2>
+    <dl class="mt-5 space-y-4">
+        <div><dt class="text-slate-400">Affected service</dt><dd class="mt-1 break-words">{{ incident.affected_service }}</dd></div>
+        <div><dt class="text-slate-400">Occurrence time</dt><dd class="mt-1">{{ incident.occurred_at|utc|date:"d M Y, H:i" }} UTC</dd></div>
+        <div><dt class="text-slate-400">Recorded at</dt><dd class="mt-1">{{ incident.created_at|utc|date:"d M Y, H:i" }} UTC</dd></div>
+        <div><dt class="text-slate-400">Observed symptoms and impact</dt><dd class="mt-2 whitespace-pre-wrap break-words">{{ incident.description }}</dd></div>
+    </dl>
+</section>
+<section class="mt-6 rounded-xl border border-slate-800 p-6">
+    <h2 class="text-xl font-semibold">Investigation</h2>
+    <form method="post" action="{% url 'incidents:rca_create' incident.pk %}" class="mt-4">{% csrf_token %}
+        <label class="block mb-3"><input type="checkbox" name="use_ai"> Include optional AI explanation (OpenAI API)</label>
+        <p class="mb-3 text-slate-400">Sends rule-generated hypothesis summaries only, not raw logs or code. API usage may incur charges. Without an API key or on failure, the static report still works.</p>
+        <button class="bg-purple-600 px-5 py-3 rounded-lg" type="submit">Generate RCA Investigation Report</button></form>
+    <p class="mt-3 text-slate-400">Reports are generated in the background using saved evidence available when processing starts. Repeated clicks reuse the active job.</p>
+    {% for job in incident.rca_jobs.all|slice:':10' %}<p class="mt-3"><a class="text-purple-300 underline" href="{% url 'incidents:rca_job' incident.pk job.pk %}">RCA generation · {{ job.get_status_display }} · {{ job.created_at|date:'d M Y, H:i' }}</a></p>{% endfor %}
+    {% for report in incident.rca_reports.all %}<p class="mt-3"><a class="text-purple-300 underline" href="{% url 'incidents:rca_detail' incident.pk report.pk %}">RCA report #{{ report.pk }} · {{ report.snapshot.status }}</a></p>{% endfor %}
+    <a href="{% url 'incidents:correlation' incident.pk %}" class="inline-block mt-4 rounded-lg bg-purple-600 px-5 py-3">View Evidence Correlation</a>
+    <section class="mt-4 mb-6 border border-slate-700 rounded-lg p-5">
+    <h3 class="text-xl font-semibold">Deployment Timeline</h3>
+    <p class="mt-2 text-slate-400">Oldest deployment first. Incident: {{ incident.occurred_at|utc|date:"d M Y, H:i:s" }} UTC. Time proximity does not establish root cause.</p>
+    <a href="{% url 'incidents:deployment_create' incident.pk %}" class="inline-block mt-3 text-blue-300 underline">Record Deployment</a>
+    {% for deployment in incident.deployments.all %}
+    <article class="mt-4 border-t border-slate-700 pt-3">
+    <a class="text-blue-300 underline break-words" href="{% url 'incidents:deployment_detail' incident.pk deployment.pk %}">{{ deployment.service }} · {{ deployment.environment }}</a>
+    <p class="mt-2">{{ deployment.deployed_at|utc|date:"d M Y, H:i:s" }} UTC · {{ deployment.relative_time }}</p>
+    <p class="mt-1 text-sm break-all">{{ deployment.repository }} · {{ deployment.commit_sha }}</p>
+    </article>
+    {% empty %}<p class="mt-3 text-slate-400">No deployment records attached yet.</p>{% endfor %}
+    </section>
+    <a href="{% url 'incidents:trace_create' incident.pk %}" class="inline-block mt-4 rounded-lg bg-blue-600 px-5 py-3">Add Trace Snapshot</a>
+    {% for evidence in incident.trace_evidence.all %}
+    <p class="mt-4"><a class="text-blue-300 underline" href="{% url 'incidents:trace_detail' incident.pk evidence.pk %}">Trace evidence #{{ evidence.pk }}</a> · {{ evidence.analysis.span_count }} spans · {{ evidence.analysis.findings|length }} findings</p>
+    {% endfor %}
+    <a href="{% url 'incidents:database_create' incident.pk %}" class="inline-block mt-4 rounded-lg bg-blue-600 px-5 py-3">Add Database Snapshot</a>
+    {% for evidence in incident.database_evidence.all %}
+    <p class="mt-4"><a class="text-blue-300 underline" href="{% url 'incidents:database_detail' incident.pk evidence.pk %}">Database evidence #{{ evidence.pk }} · {{ evidence.analysis.database }}</a> · {{ evidence.analysis.findings|length }} findings</p>
+    {% endfor %}
+    <p class="mt-3 text-slate-400">Attach evidence, review temporal correlations and generate an investigation report. Confirmed root-cause diagnosis is not available yet.</p>
+    <a href="{% url 'incidents:logs_create' incident.pk %}" class="inline-block mt-4 rounded-lg bg-blue-600 px-5 py-3">Add Logs</a>
+    {% for evidence in incident.log_evidence.all %}
+    <p class="mt-4"><a class="text-blue-300 underline" href="{% url 'incidents:log_detail' incident.pk evidence.pk %}">Log evidence #{{ evidence.pk }} · {{ evidence.source_name }}</a> · {{ evidence.analysis.error_count }} error-level lines</p>
+    {% empty %}<p class="mt-4 text-slate-400">No log evidence attached yet.</p>{% endfor %}
+</section>
+<a href="{% url 'incidents:list' %}" class="inline-block mt-6 text-blue-300 underline">Back to Incidents</a>
+{% endblock %}

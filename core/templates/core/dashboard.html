@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TraceAI</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-950 text-white min-h-screen">
+{% include 'core/account_nav.html' %}
+
+    <!-- Navbar -->
+
+    <nav class="border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-8 py-5 flex justify-between items-center">
+
+            <h1 class="text-2xl font-bold">
+                Trace<span class="text-blue-500">AI</span>
+            </h1>
+
+            <div class="flex items-center gap-2 text-sm text-green-400">
+                <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+                System Online
+            </div>
+
+        </div>
+    </nav>
+
+
+    <!-- Main -->
+
+    <main class="max-w-7xl mx-auto px-8 py-16">
+
+        <div class="mb-14">
+
+            <p class="text-blue-400 font-medium mb-3">
+                AI PRODUCTION INTELLIGENCE
+            </p>
+
+            <h2 class="text-5xl font-bold leading-tight mb-5">
+                Understand production failures.
+                <br>
+                Before they become outages.
+            </h2>
+
+            <p class="text-slate-400 text-lg max-w-3xl">
+                TraceAI correlates logs, traces, database metrics,
+                deployments and code changes to investigate production
+                incidents and identify evidence-backed root causes.
+            </p>
+
+        </div>
+
+
+        <!-- Features -->
+
+        <div class="grid md:grid-cols-2 gap-6">
+
+
+            <!-- Incident Investigator -->
+
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-8">
+
+                <div class="text-blue-400 text-sm font-semibold mb-4">
+                    INCIDENT INTELLIGENCE
+                </div>
+
+                <h3 class="text-2xl font-semibold mb-3">
+                    Production Investigator
+                </h3>
+
+                <p class="text-slate-400 mb-8">
+                    Analyze logs, traces, metrics, deployments and
+                    Git changes to identify probable root causes
+                    behind production failures.
+                </p>
+
+                <a href="{% url 'incidents:list' %}"
+                    class="bg-blue-600 hover:bg-blue-500 transition px-5 py-3 rounded-lg font-medium">
+
+                    Investigate Incident
+
+                </a>
+
+            </div>
+
+
+            <!-- Code Review -->
+
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-8">
+
+                <div class="text-purple-400 text-sm font-semibold mb-4">
+                    CODE INTELLIGENCE
+                </div>
+
+                <h3 class="text-2xl font-semibold mb-3">
+                    AI Code Review
+                </h3>
+
+                <p class="text-slate-400 mb-8">
+                    Analyze standalone code, commits and pull requests
+                    for security, reliability, performance,
+                    database and production risks.
+                </p>
+
+              <a
+    href="{% url 'code_review:review' %}"
+    class="inline-block bg-purple-600 hover:bg-purple-500
+           transition px-5 py-3 rounded-lg font-medium"
+>
+    Review Code
+</a>
+
+            </div>
+
+        </div>
+
+
+        <!-- Account statistics -->
+
+        <div class="grid md:grid-cols-3 gap-6 mt-10">
+
+            <div class="border border-slate-800 rounded-xl p-6">
+                <p class="text-slate-500 text-sm">SAVED INCIDENTS</p>
+                <p class="text-3xl font-semibold mt-2">{{ incident_count }}</p>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl p-6">
+                <p class="text-slate-500 text-sm">PYTHON CODE REVIEWS</p>
+                <p class="text-3xl font-semibold mt-2">{{ review_count }}</p>
+            </div>
+
+            <div class="border border-slate-800 rounded-xl p-6">
+                <p class="text-slate-500 text-sm">CODE FINDINGS</p>
+                <p class="text-3xl font-semibold mt-2">{{ risk_count }}</p>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>
+
